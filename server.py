@@ -9,7 +9,7 @@ import threading
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
 ADDRESS = "127.0.0.1"
-PORT = 3333
+PORT = 3335
 MAX_LISTEN_NUM = 20
 RECEIVE_SIZE = 1024
 
@@ -52,19 +52,6 @@ class Server:
             print("================")
             logger.error(e)
 
-    def _register(self, username, password):
-        logger = logging.getLogger(__name__)
-        try:
-            result = os.popen("cat ./ServerFolder/UserProfile.txt | grep %s" % username)
-            if result == '':
-                os.system("echo %s:%s >> ./ServerFolder/UserProfile.txt" % (str(username), str(hash(password))))
-                logger.info("Add new username to UserProfile.txt.")
-            else:
-                logger.warning("username: %s has been used! Please choose other name!")
-
-        except Exception as e:
-            logger.error(e)
-
     def _isValidusername(self, **kwargs):
         logger = logging.getLogger(__name__)
         client_socket = kwargs["client_socket"]
@@ -84,6 +71,20 @@ class Server:
             return False
         else:
             return username
+
+    def _register(self, username, password):
+        logger = logging.getLogger(__name__)
+        try:
+            result = os.popen("cat ./ServerFolder/UserProfile.txt | grep %s" % username).read()
+            print(result)
+            if result == '':
+                os.system("echo %s:%s >> ./ServerFolder/UserProfile.txt" % (str(username), str(hash(password))))
+                logger.info("Add new username to UserProfile.txt.")
+            else:
+                logger.warning("username: %s has been used! Please choose other name!")
+
+        except Exception as e:
+            logger.error(e)
 
     def register(self, *args, **kwargs):
         logger = logging.getLogger(__name__)
@@ -181,6 +182,7 @@ class Server:
                 self.COMMAND_LIST[command](*args, **kwargs)
                 logger.info("Get command OK!")
             except Exception as e:
+                print("++++++++++++")
                 logger.error(e)
         else:
             pass

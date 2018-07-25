@@ -7,7 +7,7 @@ import threading
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
 ADDRESS = "127.0.0.1"
-PORT = 3333
+PORT = 3335
 RECEIVE_SIZE = 1024
 
 
@@ -55,4 +55,3 @@ if __name__ == "__main__":
     t2 = threading.Thread(target=client.send)
     t1.start()
     t2.start()
-   
