@@ -3,6 +3,7 @@
 
 import socket
 import logging
+import threading
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
 ADDRESS = "127.0.0.1"
@@ -32,19 +33,26 @@ class Client:
         pass
 
     def register(self, username=None, password=None):
-        self.send("--register %s %s" % (username, password))
+        self._send("--register %s %s" % (username, password))
 
     def receive(self):
-        msg = self.socketFD.recv(RECEIVE_SIZE).decode('utf-8')
-        print(msg)
+        while True:
+            msg = self.socketFD.recv(RECEIVE_SIZE).decode('utf-8')
+            print(msg)
 
-    def send(self, msg):
+    def _send(self, msg):
         self.socketFD.send(str(msg).encode('utf-8'))
+
+    def send(self):
+        while True:
+            self._send(input())
 
 
 if __name__ == "__main__":
     client = Client()
     client.register()
-    while True:
-        client.receive()
-        client.send(input().encode('utf-8'))
+    t1 = threading.Thread(target=client.receive)
+    t2 = threading.Thread(target=client.send)
+    t1.start()
+    t2.start()
+   
