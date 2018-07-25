@@ -17,6 +17,7 @@ class Server:
         logger = logging.getLogger(__name__)
         self.address = address
         self.port = port
+        self.client_sockets = []
         self.maxListenNum = maxListenNum
         self.COMMAND_LIST = {
             "--register": self.register, "--login": self.login, "--quit": self.quit,
@@ -25,16 +26,23 @@ class Server:
             "--add-friend": self.addfriend, "--delete-friend": self.deletefriend, "--search-user": self.searchuser,
             "--talk-with": self.talkwith
         }
+        self.STATUS_LIST = {
+            "register": 1, "login": 1, "quit": 1, "create-chatroom": 1, "join-chatroom": 1, "quit-chatroom": 1,
+            "delete-chatroom": 1, "add-friend": 1, "delete-friend": 1, "search-user": 1, "talk-with": 1
+        }
+
         try:
             self.socketFD = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            logger.info("Get socket file descriptor: %s OK!" % str(self.socketFD))
+            logger.info("Create socket file descriptor: %s OK!" % str(self.socketFD))
         except Exception as e:
             logger.error(e)
+
         try:
             self.socketFD.bind((self.address, self.port))
             logger.info("Bind to %s : %s OK!" % (self.address, self.port))
         except Exception as e:
             logger.error(e)
+
         try:
             self.socketFD.listen(self.maxListenNum)
             logger.info("Listen to clients OK!")
@@ -54,37 +62,37 @@ class Server:
         except Exception as e:
             logger.error(e)
 
-    def register(self, client_socket):
+    def register(self, *args):
         pass
 
-    def login(self, username, password):
+    def login(self, *args):
         pass
 
-    def quit(self, client_socket):
+    def quit(self, *args):
         pass
 
-    def createchatroom(self):
+    def createchatroom(self, *args):
         pass
 
-    def joinchatroom(self):
+    def joinchatroom(self, *args):
         pass
 
-    def quitchatroom(self):
+    def quitchatroom(self, *args):
         pass
 
-    def deletechatroom(self):
+    def deletechatroom(self, *args):
         pass
 
-    def addfriend(self):
+    def addfriend(self, *args):
         pass
 
-    def deletefriend(self):
+    def deletefriend(self, *args):
         pass
 
-    def searchuser(self):
+    def searchuser(self, *args):
         pass
 
-    def talkwith(self):
+    def talkwith(self, *args):
         pass
 
     def _msganalysis(self, msg):
@@ -102,6 +110,7 @@ class Server:
     def _tcpservice(self, client_socket):
         while True:
             msg = client_socket.recv(RECEIVE_SIZE)
+            self._msganalysis(msg)
 
     def run(self):
         while True:
