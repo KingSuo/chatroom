@@ -5,8 +5,9 @@ import random
 import os
 import logging
 import socket
+import threading
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
 ADDRESS = "127.0.0.1"
 PORT = 3333
 MAX_LISTEN_NUM = 20
@@ -33,8 +34,8 @@ class Server:
         }
 
         try:
-            self.socketFD = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-            logger.info("Create socket file descriptor: %s OK!" % str(self.socketFD))
+            self.socketFD = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            logger.info("Create socket file descriptor OK!")
         except Exception as e:
             logger.error(e)
 
@@ -48,6 +49,7 @@ class Server:
             self.socketFD.listen(self.maxListenNum)
             logger.info("Listen to clients OK!")
         except Exception as e:
+            print("================")
             logger.error(e)
 
     def _register(self, username, password):
@@ -121,6 +123,7 @@ class Server:
             password = hash(client_socket.recv(RECEIVE_SIZE))
             self._register(username=username, password=password)
         else:  # --register {username} {password}
+            print(args)
             kwargs["username"] = args[0]
             username = self._isValidusername(**kwargs)
             while not username:
@@ -171,6 +174,7 @@ class Server:
 
     def _msganalysis(self, msg, **kwargs):
         logger = logging.getLogger(__name__)
+        print(msg)
         if msg.startswith("--"):
             command, *args = msg.split(' ')
             try:
@@ -183,15 +187,26 @@ class Server:
 
     def _tcpservice(self, client_socket):
         while True:
-            msg = client_socket.recv(RECEIVE_SIZE)
+            msg = client_socket.recv(RECEIVE_SIZE).decode('utf-8')
+            print('=============')
+            print(msg)
+            if not msg:
+                break
             self._msganalysis(msg, client_socket=client_socket)
 
     def run(self):
         while True:
             client_socket, client_address = self.socketFD.accept()
+            t = threading.Thread(target=self._tcpservice, args=(client_socket,))
+            t.start()
 
     def receive(self):
         pass
 
     def send(self):
         pass
+
+
+if __name__ == "__main__":
+    server = Server()
+    server.run()
