@@ -32,8 +32,24 @@ class Client:
     def login(self, username, authkey):
         pass
 
-    def register(self, username=None, password=None):
-        self._send("--register %s %s" % (username, password))
+    def register(self, *args, **kwargs):
+
+        if len(args) == 0:
+            self._send("--register")
+        elif len(args) == 1:
+            username = args[0]
+            self._send("--register %s" % username)
+        elif "username" in kwargs.keys():
+            username = kwargs["username"]
+            self._send("--register %s" % username)
+        elif "username" in kwargs.keys() and "password" in kwargs.keys():
+            username = kwargs["username"]
+            password = kwargs["password"]
+            self._send("--register %s %s" % (username, password))
+        else:
+            username = args[0]
+            password = args[1]
+            self._send("--register %s %s" % (username, password))
 
     def receive(self):
         while True:
