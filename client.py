@@ -55,3 +55,5 @@ if __name__ == "__main__":
     t2 = threading.Thread(target=client.send)
     t1.start()
     t2.start()
+
+    print("==========")
