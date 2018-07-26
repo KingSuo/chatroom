@@ -162,6 +162,7 @@ class Server:
         else:  # --register {username} {password}
             print(args)
             kwargs["username"] = args[0]
+            kwargs["password"] = args[1]
             username = self._isValidusername(**kwargs)
             while not username:
                 kwargs.pop(username)
@@ -176,8 +177,6 @@ class Server:
                     logger.info("Automatically assign username: %s" % username)
                     break
                 username = self._isValidusername(**kwargs)
-            self.send(client_socket, "Please enter your password:")
-            password = self.receive(client_socket)
             isRegistered = self._register(username=username, password=password, client_socket=client_socket)
             repeat_times = 0
             while not isRegistered:
@@ -192,8 +191,15 @@ class Server:
                 isRegistered = self._register(username=username, password=password, client_socket=client_socket)
         logger.info("Register function end!")
 
+    def is_exist(self, *args, **kwargs):
+        if "username" in kwargs.keys() and "filename" in kwargs.keys():
+            username = kwargs["username"]
+            filename = kwargs["filename"]
+            result = os.popen("cat %s | grep %s" % (filename, username)).read()
+        return False if result == '' else True
+
     def login(self, *args, **kwargs):
-        pass
+        client_socket = kwargs["client_socket"]
 
     def quit(self, *args, **kwargs):
         pass
@@ -232,7 +238,7 @@ class Server:
             msg = msg.rstrip()
             command, *args = msg.split(' ')
             try:
-                print("command: ", command)
+                print("command:%s!" % command)
                 if command in self.COMMAND_LIST.keys():
                     self.COMMAND_LIST[command](*args, **kwargs)
                     logger.info("Get command '%s' OK!" % command)
