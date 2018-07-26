@@ -7,7 +7,7 @@ import threading
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
 ADDRESS = "127.0.0.1"
-PORT = 3335
+PORT = 3336
 RECEIVE_SIZE = 1024
 
 

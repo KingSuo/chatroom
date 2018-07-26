@@ -10,7 +10,7 @@ from hashlib import sha512
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
 ADDRESS = "127.0.0.1"
-PORT = 3335
+PORT = 3336
 MAX_LISTEN_NUM = 20
 RECEIVE_SIZE = 1024
 
@@ -58,21 +58,24 @@ class Server:
         if "username" in kwargs.keys():
             username = kwargs["username"]
         else:
+            self.send(client_socket, "Please enter your username:")
             username = self.receive(client_socket)
 
         if ' ' in username or '-' in username or '!' in username:
             logger.warning("Invalid character in username %s!" % username)
             try:
                 self.send(client_socket, "Invalid character in your username: %s!Please try again!" % username)
-                self.send(client_socket, "Please enter your username:")
             except Exception as e:
                 logger.error(e)
             return False
         else:
             return username
 
-    def _register(self, username, password):
+    def _register(self, **kwargs):
         logger = logging.getLogger(__name__)
+        username = kwargs["username"]
+        password = kwargs["password"]
+        client_socket = kwargs["client_socket"]
         try:
             result = os.popen("cat ./ServerFolder/UserProfile.txt | grep %s" % username).read()
             print(result)
@@ -82,12 +85,16 @@ class Server:
                 password = sha.hexdigest()
                 os.system("echo %s:%s >> ./ServerFolder/UserProfile.txt" % (str(username), password))
                 logger.info("Add new username to UserProfile.txt.")
+                self.send(client_socket, "Successfully register!")
                 return True
             else:
-                logger.warning("username: %s has been used! Please choose other name!")
+                logger.warning("username '%s' has been used! Please choose other name!" % username)
+                self.send(client_socket,
+                          "username '%s' has been used! Please choose other name!" % username)
                 return False
         except Exception as e:
             logger.error(e)
+            self.send(client_socket, "Some errors to register!")
             return False
 
     def register(self, *args, **kwargs):
@@ -95,7 +102,6 @@ class Server:
         repeat_times = 0
         client_socket = kwargs["client_socket"]
         if len(args) == 0:  # only --register
-            self.send(client_socket, "Please enter your username:")
             username = False
             while not username:
                 repeat_times += 1
@@ -106,21 +112,23 @@ class Server:
                         client_socket,
                         "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username
                     )
-                    # client_socket.send(("OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR
-                    # A NAME CALLED %s!" % username).encode('utf-8'))
                     logger.info("Automatically assign username: %s" % username)
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            isRegistered = False
+            password = self.receive(client_socket)
+            isRegistered = self._register(username=username, password=password, client_socket=client_socket)
             repeat_times = 0
             while not isRegistered:
                 repeat_times += 1
                 if repeat_times >= 4:
                     self.send(client_socket, "OH MY GOD!PLEASE GIVE UP NOW!")
                     break
+                self.send(client_socket, "Please enter your username:")
+                username = self.receive(client_socket)
+                self.send(client_socket, "Please enter your password:")
                 password = self.receive(client_socket)
-                isRegistered = self._register(username=username, password=password)
+                isRegistered = self._register(username=username, password=password, client_socket=client_socket)
         elif len(args) == 1:  # only --register {username}
             kwargs["username"] = args[0]
             username = self._isValidusername(**kwargs)
@@ -134,21 +142,23 @@ class Server:
                         client_socket,
                         "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username
                     )
-                    # client_socket.send(("OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR
-                    # A NAME CALLED %s!" % username).encode('utf-8'))
                     logger.info("Automatically assign username: %s" % username)
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            isRegistered = False
+            password = self.receive(client_socket)
+            isRegistered = self._register(username=username, password=password, client_socket=client_socket)
             repeat_times = 0
             while not isRegistered:
                 repeat_times += 1
                 if repeat_times >= 4:
                     self.send(client_socket, "OH MY GOD!PLEASE GIVE UP NOW!")
                     break
+                self.send(client_socket, "Please enter your username:")
+                username = self.receive(client_socket)
+                self.send(client_socket, "Please enter your password:")
                 password = self.receive(client_socket)
-                isRegistered = self._register(username=username, password=password)
+                isRegistered = self._register(username=username, password=password, client_socket=client_socket)
         else:  # --register {username} {password}
             print(args)
             kwargs["username"] = args[0]
@@ -163,23 +173,24 @@ class Server:
                         client_socket,
                         "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username
                     )
-                    # client_socket.send(("OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT
-                    # HELP GIVING YOUR A NAME CALLED %s!" % username).encode('utf-8'))
                     logger.info("Automatically assign username: %s" % username)
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            isRegistered = False
+            password = self.receive(client_socket)
+            isRegistered = self._register(username=username, password=password, client_socket=client_socket)
             repeat_times = 0
             while not isRegistered:
                 repeat_times += 1
                 if repeat_times >= 4:
                     self.send(client_socket, "OH MY GOD!PLEASE GIVE UP NOW!")
                     break
+                self.send(client_socket, "Please enter your username:")
+                username = self.receive(client_socket)
+                self.send(client_socket, "Please enter your password:")
                 password = self.receive(client_socket)
-                isRegistered = self._register(username=username, password=password)
-        logger.info("User register OK!")
-        self.send(client_socket, "Register OK!")
+                isRegistered = self._register(username=username, password=password, client_socket=client_socket)
+        logger.info("Register function end!")
 
     def login(self, *args, **kwargs):
         pass
@@ -213,15 +224,21 @@ class Server:
 
     def _msganalysis(self, msg, **kwargs):
         logger = logging.getLogger(__name__)
+        client_socket = kwargs["client_socket"]
         print(msg)
+        print(len(msg))
         print(type(msg))
         if msg.startswith("--"):
+            msg = msg.rstrip()
             command, *args = msg.split(' ')
             try:
                 print("command: ", command)
-                print("command_type: ", type(command))
-                self.COMMAND_LIST[command](*args, **kwargs)
-                logger.info("Get command OK!")
+                if command in self.COMMAND_LIST.keys():
+                    self.COMMAND_LIST[command](*args, **kwargs)
+                    logger.info("Get command '%s' OK!" % command)
+                else:
+                    self.send(client_socket, "Unknown command '%s'!" % command)
+                    # using for other command,default --talkwith
             except Exception as e:
                 print("++++++++++++")
                 logger.error(e)
@@ -231,9 +248,6 @@ class Server:
     def _tcpservice(self, client_socket):
         while True:
             msg = self.receive(client_socket)
-            # msg = client_socket.recv(RECEIVE_SIZE).decode('utf-8')
-            print('=============')
-            print(msg)
             if not msg:
                 break
             self._msganalysis(msg, client_socket=client_socket)
