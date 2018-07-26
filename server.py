@@ -6,6 +6,7 @@ import os
 import logging
 import socket
 import threading
+from hashlib import sha512
 
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(name)s - %(funcName)s - %(levelname)s - %(message)s')
 ADDRESS = "127.0.0.1"
@@ -81,7 +82,10 @@ class Server:
             result = os.popen("cat ./ServerFolder/UserProfile.txt | grep %s" % username).read()
             print(result)
             if result == '':
-                os.system("echo %s:%s >> ./ServerFolder/UserProfile.txt" % (str(username), str(hash(password))))
+                sha = sha512()
+                sha.update(str(password).encode('utf-8'))
+                password = sha.hexdigest()
+                os.system("echo %s:%s >> ./ServerFolder/UserProfile.txt" % (str(username), password))
                 logger.info("Add new username to UserProfile.txt.")
             else:
                 logger.warning("username: %s has been used! Please choose other name!")
@@ -111,9 +115,7 @@ class Server:
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            # client_socket.send("Please enter your password:".encode('utf-8'))
-            password = hash(self.receive(client_socket))
-            # password = hash(client_socket.recv(RECEIVE_SIZE).decode('utf-8'))
+            password = self.receive(client_socket)
             self._register(username=username, password=password)
         elif len(args) == 1:  # only --register {username}
             kwargs["username"] = args[0]
@@ -134,9 +136,7 @@ class Server:
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            # client_socket.send("Please enter your password:".encode('utf-8'))
-            password = hash(self.receive(client_socket))
-            # password = hash(client_socket.recv(RECEIVE_SIZE).decode('utf-8'))
+            password = self.receive(client_socket)
             self._register(username=username, password=password)
         else:  # --register {username} {password}
             print(args)
@@ -158,9 +158,7 @@ class Server:
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            # client_socket.send("Please enter your password:".encode('utf-8'))
-            password = hash(self.receive(client_socket))
-            # password = hash(client_socket.recv(RECEIVE_SIZE).decode('utf-8'))
+            password = self.receive(client_socket)
             self._register(username=username, password=password)
         logger.info("User register OK!")
 
