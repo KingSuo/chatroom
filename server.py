@@ -58,14 +58,17 @@ class Server:
         if "username" in kwargs.keys():
             username = kwargs["username"]
         else:
-            username = client_socket.recv(RECEIVE_SIZE)
+            username = self.receive(client_socket)
+            # username = client_socket.recv(RECEIVE_SIZE).decode('utf-8')
 
         if ' ' in username or '-' in username or '!' in username:
             logger.warning("Invalid character in username %s!" % username)
             try:
-                client_socket.send(
-                    ("Invalid character in your username: %s!Please try again!" % username).encode('utf-8'))
-                client_socket.send("Please enter your username:".encode('utf-8'))
+                self.send(client_socket, "Invalid character in your username: %s!Please try again!" % username)
+                # client_socket.send(
+                #     ("Invalid character in your username: %s!Please try again!" % username).encode('utf-8'))
+                self.send(client_socket, "Please enter your username:")
+                # client_socket.send("Please enter your username:".encode('utf-8'))
             except Exception as e:
                 logger.error(e)
             return False
@@ -82,7 +85,6 @@ class Server:
                 logger.info("Add new username to UserProfile.txt.")
             else:
                 logger.warning("username: %s has been used! Please choose other name!")
-
         except Exception as e:
             logger.error(e)
 
@@ -91,20 +93,27 @@ class Server:
         repeat_times = 0
         client_socket = kwargs["client_socket"]
         if len(args) == 0:  # only --register
-            client_socket.send("Please enter your username:".encode('utf-8'))
+            self.send(client_socket, "Please enter your username:")
+            # client_socket.send("Please enter your username:".encode('utf-8'))
             username = False
             while not username:
                 repeat_times += 1
                 if repeat_times > 5:
                     tempID = random.randint(0, 99)
                     username = "Agan%d" % tempID
-                    client_socket.send(
-                        "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username)
+                    self.send(
+                        client_socket,
+                        "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username
+                    )
+                    # client_socket.send(("OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR
+                    # A NAME CALLED %s!" % username).encode('utf-8'))
                     logger.info("Automatically assign username: %s" % username)
                     break
                 username = self._isValidusername(**kwargs)
-            client_socket.send("Please enter your password:".encode('utf-8'))
-            password = hash(client_socket.recv(RECEIVE_SIZE))
+            self.send(client_socket, "Please enter your password:")
+            # client_socket.send("Please enter your password:".encode('utf-8'))
+            password = hash(self.receive(client_socket))
+            # password = hash(client_socket.recv(RECEIVE_SIZE).decode('utf-8'))
             self._register(username=username, password=password)
         elif len(args) == 1:  # only --register {username}
             kwargs["username"] = args[0]
@@ -115,13 +124,19 @@ class Server:
                 if repeat_times > 5:
                     tempID = random.randint(0, 99)
                     username = "Agan%d" % tempID
-                    client_socket.send(
-                        "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username)
+                    self.send(
+                        client_socket,
+                        "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username
+                    )
+                    # client_socket.send(("OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR
+                    # A NAME CALLED %s!" % username).encode('utf-8'))
                     logger.info("Automatically assign username: %s" % username)
                     break
                 username = self._isValidusername(**kwargs)
-            client_socket.send("Please enter your password:".encode('utf-8'))
-            password = hash(client_socket.recv(RECEIVE_SIZE))
+            self.send(client_socket, "Please enter your password:")
+            # client_socket.send("Please enter your password:".encode('utf-8'))
+            password = hash(self.receive(client_socket))
+            # password = hash(client_socket.recv(RECEIVE_SIZE).decode('utf-8'))
             self._register(username=username, password=password)
         else:  # --register {username} {password}
             print(args)
@@ -133,13 +148,19 @@ class Server:
                 if repeat_times > 5:
                     tempID = random.randint(0, 99)
                     username = "Agan%d" % tempID
-                    client_socket.send(
-                        "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username)
+                    self.send(
+                        client_socket,
+                        "OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT HELP GIVING YOUR A NAME CALLED %s!" % username
+                    )
+                    # client_socket.send(("OH MY GOD,MAN!YOUR ARE SO GOOD ENOUGH THAT I CANNOT
+                    # HELP GIVING YOUR A NAME CALLED %s!" % username).encode('utf-8'))
                     logger.info("Automatically assign username: %s" % username)
                     break
                 username = self._isValidusername(**kwargs)
-            client_socket.send("Please enter your password:".encode('utf-8'))
-            password = hash(client_socket.recv(RECEIVE_SIZE))
+            self.send(client_socket, "Please enter your password:")
+            # client_socket.send("Please enter your password:".encode('utf-8'))
+            password = hash(self.receive(client_socket))
+            # password = hash(client_socket.recv(RECEIVE_SIZE).decode('utf-8'))
             self._register(username=username, password=password)
         logger.info("User register OK!")
 
@@ -176,9 +197,12 @@ class Server:
     def _msganalysis(self, msg, **kwargs):
         logger = logging.getLogger(__name__)
         print(msg)
+        print(type(msg))
         if msg.startswith("--"):
             command, *args = msg.split(' ')
             try:
+                print("command: ", command)
+                print("command_type: ", type(command))
                 self.COMMAND_LIST[command](*args, **kwargs)
                 logger.info("Get command OK!")
             except Exception as e:
@@ -189,7 +213,8 @@ class Server:
 
     def _tcpservice(self, client_socket):
         while True:
-            msg = client_socket.recv(RECEIVE_SIZE).decode('utf-8')
+            msg = self.receive(client_socket)
+            # msg = client_socket.recv(RECEIVE_SIZE).decode('utf-8')
             print('=============')
             print(msg)
             if not msg:
@@ -202,11 +227,11 @@ class Server:
             t = threading.Thread(target=self._tcpservice, args=(client_socket,))
             t.start()
 
-    def receive(self):
-        pass
+    def receive(self, client_socket):
+        return client_socket.recv(RECEIVE_SIZE).decode('utf-8')
 
-    def send(self):
-        pass
+    def send(self, client_socket, msg):
+        client_socket.send(str(msg).encode('utf-8'))
 
 
 if __name__ == "__main__":
