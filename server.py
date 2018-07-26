@@ -50,7 +50,6 @@ class Server:
             self.socketFD.listen(self.maxListenNum)
             logger.info("Listen to clients OK!")
         except Exception as e:
-            print("================")
             logger.error(e)
 
     def _isValidusername(self, **kwargs):
@@ -60,16 +59,12 @@ class Server:
             username = kwargs["username"]
         else:
             username = self.receive(client_socket)
-            # username = client_socket.recv(RECEIVE_SIZE).decode('utf-8')
 
         if ' ' in username or '-' in username or '!' in username:
             logger.warning("Invalid character in username %s!" % username)
             try:
                 self.send(client_socket, "Invalid character in your username: %s!Please try again!" % username)
-                # client_socket.send(
-                #     ("Invalid character in your username: %s!Please try again!" % username).encode('utf-8'))
                 self.send(client_socket, "Please enter your username:")
-                # client_socket.send("Please enter your username:".encode('utf-8'))
             except Exception as e:
                 logger.error(e)
             return False
@@ -87,10 +82,13 @@ class Server:
                 password = sha.hexdigest()
                 os.system("echo %s:%s >> ./ServerFolder/UserProfile.txt" % (str(username), password))
                 logger.info("Add new username to UserProfile.txt.")
+                return True
             else:
                 logger.warning("username: %s has been used! Please choose other name!")
+                return False
         except Exception as e:
             logger.error(e)
+            return False
 
     def register(self, *args, **kwargs):
         logger = logging.getLogger(__name__)
@@ -98,7 +96,6 @@ class Server:
         client_socket = kwargs["client_socket"]
         if len(args) == 0:  # only --register
             self.send(client_socket, "Please enter your username:")
-            # client_socket.send("Please enter your username:".encode('utf-8'))
             username = False
             while not username:
                 repeat_times += 1
@@ -115,8 +112,15 @@ class Server:
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            password = self.receive(client_socket)
-            self._register(username=username, password=password)
+            isRegistered = False
+            repeat_times = 0
+            while not isRegistered:
+                repeat_times += 1
+                if repeat_times >= 4:
+                    self.send(client_socket, "OH MY GOD!PLEASE GIVE UP NOW!")
+                    break
+                password = self.receive(client_socket)
+                isRegistered = self._register(username=username, password=password)
         elif len(args) == 1:  # only --register {username}
             kwargs["username"] = args[0]
             username = self._isValidusername(**kwargs)
@@ -136,8 +140,15 @@ class Server:
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            password = self.receive(client_socket)
-            self._register(username=username, password=password)
+            isRegistered = False
+            repeat_times = 0
+            while not isRegistered:
+                repeat_times += 1
+                if repeat_times >= 4:
+                    self.send(client_socket, "OH MY GOD!PLEASE GIVE UP NOW!")
+                    break
+                password = self.receive(client_socket)
+                isRegistered = self._register(username=username, password=password)
         else:  # --register {username} {password}
             print(args)
             kwargs["username"] = args[0]
@@ -158,9 +169,17 @@ class Server:
                     break
                 username = self._isValidusername(**kwargs)
             self.send(client_socket, "Please enter your password:")
-            password = self.receive(client_socket)
-            self._register(username=username, password=password)
+            isRegistered = False
+            repeat_times = 0
+            while not isRegistered:
+                repeat_times += 1
+                if repeat_times >= 4:
+                    self.send(client_socket, "OH MY GOD!PLEASE GIVE UP NOW!")
+                    break
+                password = self.receive(client_socket)
+                isRegistered = self._register(username=username, password=password)
         logger.info("User register OK!")
+        self.send(client_socket, "Register OK!")
 
     def login(self, *args, **kwargs):
         pass
